@@ -75,6 +75,7 @@ int main(int argc, char *argv[]) {
     uint8_t packet[1157]; // 5 byte header + up to 1152 bytes PCM payload
     uint8_t sample_rate_code;
     switch (header.sample_rate) {
+        case 24000:  sample_rate_code = 0x02; break; // Map to 48kHz for the header, pacing will be 24kHz
         case 44100:  sample_rate_code = 0x01; break;
         case 48000:  sample_rate_code = 0x02; break;
         case 88200:  sample_rate_code = 0x03; break;
