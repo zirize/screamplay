@@ -63,7 +63,6 @@ int main(int argc, char *argv[]) {
         fseek(file, chunk_size, SEEK_CUR);
     }
 
-    // Dummy implementation to pass test structure for now
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     struct sockaddr_in dest_addr;
     memset(&dest_addr, 0, sizeof(dest_addr));
@@ -71,8 +70,31 @@ int main(int argc, char *argv[]) {
     dest_addr.sin_port = htons(port);
     inet_pton(AF_INET, host, &dest_addr.sin_addr);
 
-    uint8_t dummy_packet[10] = {0x01, 16, 2, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    sendto(sockfd, dummy_packet, 10, 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+    uint8_t packet[1157]; // 5 byte header + up to 1152 bytes PCM payload
+    uint8_t sample_rate_code = 0x00;
+    if (header.sample_rate == 44100) sample_rate_code = 0x01;
+    else if (header.sample_rate == 48000) sample_rate_code = 0x02;
+    else sample_rate_code = 0x01; // default fallback
+
+    packet[0] = sample_rate_code;
+    packet[1] = header.bits_per_sample;
+    packet[2] = header.num_channels;
+    packet[3] = 0x03; // Stereo channel map (Front Left | Front Right)
+    packet[4] = 0x00;
+
+    int payload_max = 1152;
+    size_t bytes_read;
+    
+    // Pacing calculation
+    double bytes_per_sec = header.sample_rate * header.num_channels * (header.bits_per_sample / 8);
+
+    while ((bytes_read = fread(packet + 5, 1, payload_max, file)) > 0) {
+        sendto(sockfd, packet, bytes_read + 5, 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+        
+        // Pacing: Sleep to match audio rate
+        double sleep_sec = (double)bytes_read / bytes_per_sec;
+        usleep((useconds_t)(sleep_sec * 1000000.0));
+    }
 
     fclose(file);
     close(sockfd);
