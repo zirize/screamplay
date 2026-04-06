@@ -72,16 +72,33 @@ int main(int argc, char *argv[]) {
     inet_pton(AF_INET, host, &dest_addr.sin_addr);
 
     uint8_t packet[1157]; // 5 byte header + up to 1152 bytes PCM payload
-    uint8_t sample_rate_code = 0x00;
-    if (header.sample_rate == 44100) sample_rate_code = 0x01;
-    else if (header.sample_rate == 48000) sample_rate_code = 0x02;
-    else sample_rate_code = 0x01; // default fallback
+    uint8_t sample_rate_code;
+    switch (header.sample_rate) {
+        case 44100:  sample_rate_code = 0x01; break;
+        case 48000:  sample_rate_code = 0x02; break;
+        case 88200:  sample_rate_code = 0x03; break;
+        case 96000:  sample_rate_code = 0x04; break;
+        case 176400: sample_rate_code = 0x05; break;
+        case 192000: sample_rate_code = 0x06; break;
+        case 352800: sample_rate_code = 0x07; break;
+        case 384000: sample_rate_code = 0x08; break;
+        default:
+            fprintf(stderr, "Unsupported sample rate: %u Hz\n", header.sample_rate);
+            exit(EXIT_FAILURE);
+    }
 
     packet[0] = sample_rate_code;
-    packet[1] = header.bits_per_sample;
-    packet[2] = header.num_channels;
-    packet[3] = 0x03; // Stereo channel map (Front Left | Front Right)
-    packet[4] = 0x00;
+    packet[1] = (uint8_t)header.bits_per_sample;
+    packet[2] = (uint8_t)header.num_channels;
+    
+    // Set channel map based on number of channels
+    if (header.num_channels == 1) {
+        packet[3] = 0x04; // Mono (Front Center)
+        packet[4] = 0x00;
+    } else {
+        packet[3] = 0x03; // Stereo (Front Left | Front Right)
+        packet[4] = 0x00;
+    }
 
     int payload_max = 1152;
     size_t bytes_read;
