@@ -69,29 +69,35 @@ int main(int argc, char *argv[]) {
     packet[3] = (sfinfo.channels == 1) ? 0x04 : 0x03;
     packet[4] = 0x00;
 
-    int frames_per_packet = 288; // Always send 1152 bytes payload (288 frames stereo 16-bit)
-    short *buffer = malloc(frames_per_packet * sfinfo.channels * sizeof(short));
-    sf_count_t read_count;
+    // Constant payload size for Scream
+    const int payload_limit = 1152;
+    const int samples_per_packet = payload_limit / (sizeof(short) * sfinfo.channels);
+    short *buffer = malloc(samples_per_packet * sfinfo.channels * sizeof(short));
     
-    // Precise pacing: duration of one packet in nanoseconds
-    long packet_duration_ns = (long)((double)frames_per_packet * 1000000000.0 / sfinfo.samplerate);
+    // Packet duration in nanoseconds
+    long packet_duration_ns = (long)((double)samples_per_packet * 1000000000.0 / sfinfo.samplerate);
 
     struct timespec next_packet_time;
     clock_gettime(CLOCK_MONOTONIC, &next_packet_time);
 
-    while ((read_count = sf_readf_short(infile, buffer, frames_per_packet)) > 0) {
-        size_t payload_size = read_count * sfinfo.channels * sizeof(short);
-        memcpy(packet + 5, buffer, payload_size);
-        sendto(sockfd, packet, payload_size + 5, 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+    sf_count_t read_count;
+    while ((read_count = sf_readf_short(infile, buffer, samples_per_packet)) > 0) {
+        size_t actual_payload_size = read_count * sfinfo.channels * sizeof(short);
+        memcpy(packet + 5, buffer, actual_payload_size);
         
-        // Pacing: Calculate next absolute time to send
+        if (sendto(sockfd, packet, actual_payload_size + 5, 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr)) < 0) {
+            perror("sendto failed");
+            break;
+        }
+        
+        // Calculate next absolute time point
         next_packet_time.tv_nsec += packet_duration_ns;
         while (next_packet_time.tv_nsec >= 1000000000) {
             next_packet_time.tv_sec++;
             next_packet_time.tv_nsec -= 1000000000;
         }
         
-        // Sleep until the exact target time to prevent drift
+        // Sleep until exactly that point to prevent drift
         clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next_packet_time, NULL);
     }
 
