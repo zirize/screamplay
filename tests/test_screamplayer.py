@@ -23,14 +23,14 @@ def test_screamplayer_udp_transmission():
     sock.settimeout(2.0)
     
     # Run screamplayer
-    process = subprocess.Popen(['../screamplayer', '-H', '127.0.0.1', '-P', '4010', wav_file])
+    process = subprocess.Popen(['./screamplayer', '-H', '127.0.0.1', '-P', '4010', wav_file])
     
     try:
         data, addr = sock.recvfrom(2048)
         assert len(data) > 5, "Packet too small"
         
         # Verify Scream 5-byte header
-        sample_rate, sample_size, channels, channel_map = struct.unpack('<BBHB', data[:5])
+        sample_rate, sample_size, channels, channel_map = struct.unpack('<BBBH', data[:5])
         assert sample_rate == 0x01 # 44100 Hz
         assert sample_size == 16   # 16-bit
         assert channels == 2       # Stereo
