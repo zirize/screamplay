@@ -105,7 +105,12 @@ int main(int argc, char *argv[]) {
     size_t bytes_read;
     
     // Pacing calculation
-    double bytes_per_sec = header.sample_rate * header.num_channels * (header.bits_per_sample / 8);
+    // Bytes per second: SampleRate * NumChannels * (BitDepth / 8)
+    double bytes_per_sec = (double)header.sample_rate * header.num_channels * (header.bits_per_sample / 8);
+    if (bytes_per_sec <= 0) {
+        fprintf(stderr, "Invalid audio format parameters\n");
+        exit(EXIT_FAILURE);
+    }
 
     while ((bytes_read = fread(packet + 5, 1, payload_max, file)) > 0) {
         sendto(sockfd, packet, bytes_read + 5, 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
