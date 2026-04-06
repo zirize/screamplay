@@ -39,7 +39,8 @@ make
 ./screamplay -H 127.0.0.1 -P 4010 music.mp3
 ```
 
-## Protocol Details
-- Encapsulates audio in Scream's 5-byte header UDP packets.
-- Follows Scream's native sample rate encoding, supporting all standard rates from 44.1kHz to 384kHz.
-- Falls back to 48kHz resampling for unsupported rates to ensure wide compatibility with existing receivers.
+## License
+This project is licensed under the terms of the GNU Lesser General Public License v2.1. See the [LICENSE](LICENSE) file for details.
+
+---
+*Developed with the assistance of Gemini CLI.*
