@@ -23,21 +23,22 @@ typedef struct {
 
 int main(int argc, char *argv[]) {
     int opt;
-    char *host = "127.0.0.1";
-    int port = 4010;
+    char *host = NULL;
+    int port = 0;
 
     while ((opt = getopt(argc, argv, "H:P:")) != -1) {
         switch (opt) {
             case 'H': host = optarg; break;
             case 'P': port = atoi(optarg); break;
             default:
-                fprintf(stderr, "Usage: %s [-H host] [-P port] <wav_file>\n", argv[0]);
+                fprintf(stderr, "Usage: %s -H host -P port <wav_file>\n", argv[0]);
                 exit(EXIT_FAILURE);
         }
     }
 
-    if (optind >= argc) {
-        fprintf(stderr, "Expected wav file argument\n");
+    if (!host || port == 0 || optind >= argc) {
+        fprintf(stderr, "Error: -H <host>, -P <port>, and <wav_file> are mandatory.\n");
+        fprintf(stderr, "Usage: %s -H <host> -P <port> <wav_file>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
