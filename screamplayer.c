@@ -54,13 +54,14 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    // Seek to data chunk (simplistic approach, assuming data chunk is next)
+    // Seek to data chunk correctly
     char chunk_id[4];
     uint32_t chunk_size;
     while (fread(chunk_id, 1, 4, file) == 4 && fread(&chunk_size, 4, 1, file) == 1) {
         if (strncmp(chunk_id, "data", 4) == 0) {
             break;
         }
+        // Skip this chunk
         fseek(file, chunk_size, SEEK_CUR);
     }
 
