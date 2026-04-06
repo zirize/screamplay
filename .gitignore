@@ -1,3 +1,8 @@
-.worktrees/
+screamplay
 vendor/
-screamplayer
+dump.raw
+*.o
+.pytest_cache/
+tests/
+venv/
+scripts/
