@@ -22,8 +22,8 @@ def test_screamplayer_udp_transmission():
     sock.bind(('127.0.0.1', 4010))
     sock.settimeout(2.0)
     
-    # Run screamplayer
-    process = subprocess.Popen(['./screamplayer', '-H', '127.0.0.1', '-P', '4010', wav_file])
+    # Run screamplay
+    process = subprocess.Popen(['./screamplay', '-H', '127.0.0.1', '-P', '4010', wav_file])
     
     try:
         data, addr = sock.recvfrom(2048)

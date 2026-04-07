@@ -3,6 +3,9 @@ vendor/
 dump.raw
 *.o
 .pytest_cache/
-tests/
 venv/
-scripts/
+scream_debug.log
+tcpdump_debug.log
+scream
+screamplayer
+debug_dump.raw
