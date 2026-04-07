@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
         
         while (samples_sent < total_samples) {
             int to_send = total_samples - samples_sent;
-            if (to_send > (payload_limit / sizeof(short))) to_send = payload_limit / sizeof(short);
+            if (to_send > (int)(payload_limit / sizeof(short))) to_send = (int)(payload_limit / sizeof(short));
 
             memcpy(packet + 5, short_buffer + samples_sent, to_send * sizeof(short));
             sendto(sockfd, packet, (to_send * sizeof(short)) + 5, 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
