@@ -22,6 +22,17 @@
 #include <sndfile.h>
 #include <time.h>
 #include <samplerate.h>
+#include <getopt.h>
+
+static void usage(const char *argv0, int exit_code) {
+    fprintf(stderr, "Usage: %s [options] <audio_file>\n", argv0);
+    fprintf(stderr, "\nOptions:\n");
+    fprintf(stderr, "  -H, --host <host>    Target host IP address (mandatory)\n");
+    fprintf(stderr, "  -P, --port <port>    Target UDP port (mandatory)\n");
+    fprintf(stderr, "  -v, --verbose        Enable verbose output\n");
+    fprintf(stderr, "  -h, --help           Show this help message\n");
+    exit(exit_code);
+}
 
 static uint8_t get_scream_rate_code(int rate) {
     if (rate % 44100 == 0) {
@@ -39,18 +50,28 @@ int main(int argc, char *argv[]) {
     int opt;
     char *host = NULL;
     int port = 0;
+    int verbose = 0;
 
-    while ((opt = getopt(argc, argv, "H:P:")) != -1) {
+    static struct option long_options[] = {
+        {"host",    required_argument, 0, 'H'},
+        {"port",    required_argument, 0, 'P'},
+        {"verbose", no_argument,       0, 'v'},
+        {"help",    no_argument,       0, 'h'},
+        {0, 0, 0, 0}
+    };
+
+    while ((opt = getopt_long(argc, argv, "H:P:vh", long_options, NULL)) != -1) {
         switch (opt) {
             case 'H': host = optarg; break;
             case 'P': port = atoi(optarg); break;
-            default: exit(EXIT_FAILURE);
+            case 'v': verbose = 1; break;
+            case 'h': usage(argv[0], EXIT_SUCCESS); break;
+            default:  usage(argv[0], EXIT_FAILURE);
         }
     }
 
     if (!host || port == 0 || optind >= argc) {
-        fprintf(stderr, "Usage: screamplay -H <host> -P <port> <audio_file>\n");
-        exit(EXIT_FAILURE);
+        usage(argv[0], EXIT_FAILURE);
     }
 
     SF_INFO sfinfo;
@@ -61,6 +82,12 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
+    if (verbose) {
+        printf("Opening file:  %s\n", argv[optind]);
+        printf("Original Rate: %d Hz\n", sfinfo.samplerate);
+        printf("Channels:      %d\n", sfinfo.channels);
+    }
+
     int target_rate = sfinfo.samplerate;
     uint8_t rate_code = get_scream_rate_code(sfinfo.samplerate);
     int needs_resampling = (rate_code == 0);
@@ -68,6 +95,9 @@ int main(int argc, char *argv[]) {
     if (needs_resampling) {
         target_rate = 48000;
         rate_code = get_scream_rate_code(target_rate);
+        if (verbose) {
+            printf("Resampling to: %d Hz (Unsupported original rate)\n", target_rate);
+        }
     }
 
     // Networking Setup
@@ -135,7 +165,10 @@ int main(int argc, char *argv[]) {
             if (to_send > (int)(payload_limit / sizeof(short))) to_send = (int)(payload_limit / sizeof(short));
 
             memcpy(packet + 5, short_buffer + samples_sent, to_send * sizeof(short));
-            sendto(sockfd, packet, (to_send * sizeof(short)) + 5, 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+            if (sendto(sockfd, packet, (to_send * sizeof(short)) + 5, 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr)) < 0) {
+                perror("sendto failed");
+                break;
+            }
             
             // Pacing based on target rate
             long chunk_duration_ns = (long)((double)to_send / sfinfo.channels * 1000000000.0 / target_rate);
