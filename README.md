@@ -16,12 +16,13 @@ A command-line utility for playing back audio files over a network using the [Sc
 ### Installation
 **Debian/Ubuntu:**
 ```bash
-sudo apt install libsndfile1-dev libsamplerate0-dev
+sudo apt update
+sudo apt install build-essential pkg-config libsndfile1-dev libsamplerate0-dev
 ```
 
 **Arch Linux:**
 ```bash
-sudo pacman -S libsndfile libsamplerate
+sudo pacman -S base-devel pkgconf libsndfile libsamplerate
 ```
 
 ## Build Instructions
