@@ -27,8 +27,8 @@
 static void usage(const char *argv0, int exit_code) {
     fprintf(stderr, "Usage: %s [options] <audio_file>\n", argv0);
     fprintf(stderr, "\nOptions:\n");
-    fprintf(stderr, "  -H, --host <host>    Target host IP address (mandatory)\n");
-    fprintf(stderr, "  -P, --port <port>    Target UDP port (mandatory)\n");
+    fprintf(stderr, "  -H, --host <host>    Target host IP address (default: 239.255.77.77)\n");
+    fprintf(stderr, "  -P, --port <port>    Target UDP port (default: 4010)\n");
     fprintf(stderr, "  -v, --verbose        Enable verbose output\n");
     fprintf(stderr, "  -h, --help           Show this help message\n");
     exit(exit_code);
@@ -48,8 +48,8 @@ static uint8_t get_scream_rate_code(int rate) {
 
 int main(int argc, char *argv[]) {
     int opt;
-    char *host = NULL;
-    int port = 0;
+    const char *host = "239.255.77.77";
+    int port = 4010;
     int verbose = 0;
 
     static struct option long_options[] = {
@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    if (!host || port == 0 || optind >= argc) {
+    if (optind >= argc) {
         usage(argv[0], EXIT_FAILURE);
     }
 

@@ -62,18 +62,21 @@ sudo install -m755 screamplay /usr/local/bin/
 
 | Flag | Long form | Description |
 |------|-----------|-------------|
-| `-H <host>` | `--host <host>` | Target receiver IP address **(required)** |
-| `-P <port>` | `--port <port>` | Target UDP port **(required)** |
+| `-H <host>` | `--host <host>` | Target receiver IP address (default: `239.255.77.77`) |
+| `-P <port>` | `--port <port>` | Target UDP port (default: `4010`) |
 | `-v` | `--verbose` | Print file info and resampling details |
 | `-h` | `--help` | Show help and exit |
 
 ### Examples
 
 ```bash
-# Basic playback
+# Default Scream multicast broadcast (no -H/-P needed)
+./screamplay music.flac
+
+# Specific host and port
 ./screamplay -H 192.168.1.100 -P 4010 music.flac
 
-# Multicast (default Scream address)
+# Multicast with explicit address
 ./screamplay -H 239.255.77.77 -P 4010 music.wav
 
 # Verbose output (shows sample rate, channels, resampling info)
@@ -81,6 +84,9 @@ sudo install -m755 screamplay /usr/local/bin/
 
 # Loopback test (receiver on the same machine)
 ./screamplay -H 127.0.0.1 -P 4010 music.mp3
+
+# Verbose output
+./screamplay -v music.ogg
 ```
 
 ## Receivers
