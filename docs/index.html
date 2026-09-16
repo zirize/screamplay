@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>screamplay — play audio files over the network with the Scream protocol</title>
+<meta name="description" content="A command-line player that streams WAV, FLAC, OGG, AIFF and MP3 to any Scream receiver over UDP. Resamples odd rates to 48 kHz with libsamplerate and paces packets with clock_nanosleep so the stream does not drift." />
+<meta name="author" content="zirize" />
+<meta name="robots" content="index, follow" />
+<link rel="canonical" href="https://zirize.github.io/screamplay/" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://zirize.github.io/screamplay/" />
+<meta property="og:title" content="screamplay — network audio playback from the command line" />
+<meta property="og:description" content="Stream audio files to any Scream receiver over UDP, with automatic resampling and drift-free packet pacing." />
+<meta name="twitter:card" content="summary" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "screamplay",
+  "description": "A command-line player that streams WAV, FLAC, OGG, AIFF and MP3 to any Scream receiver over UDP. Resamples odd rates to 48 kHz with libsamplerate and paces packets with clock_nanosleep so the stream does not drift.",
+  "url": "https://zirize.github.io/screamplay/",
+  "inLanguage": "en",
+  "author": { "@type": "Person", "name": "zirize", "url": "https://github.com/zirize" },
+  "isPartOf": { "@type": "WebSite", "name": "zirize", "url": "https://zirize.github.io/" },
+  "about": ["Scream protocol", "network audio", "libsndfile", "libsamplerate", "Linux", "command line"]
+}
+</script>
+<style>
+:root{--bg:#0f1117;--surface:#1a1d27;--border:#2d3148;--accent:#7c6af7;--accent2:#56c8a0;--text:#e2e4ef;--muted:#8b90b0;--radius:10px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;font-size:16px;min-height:100vh;display:flex;flex-direction:column}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+header{background:linear-gradient(135deg,#1a1d27 0%,#12141e 100%);border-bottom:1px solid var(--border);padding:56px 20px 44px;text-align:center}
+header h1{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:700;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:12px}
+header p{font-size:1.05rem;color:var(--muted);max-width:620px;margin:0 auto 22px}
+.btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.btns a{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:var(--radius);background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:.9rem;font-weight:500}
+.btns a:hover{text-decoration:none;border-color:var(--accent)}
+.btns a.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+main{max-width:820px;margin:0 auto;padding:48px 20px;flex:1}
+h2{font-size:1.35rem;margin:44px 0 14px;color:var(--text)}
+h2:first-child{margin-top:0}
+h3{font-size:1.05rem;margin:28px 0 10px;color:var(--accent2)}
+p{margin-bottom:14px;color:var(--text)}
+ul,ol{margin:0 0 16px 22px}
+li{margin-bottom:8px}
+code{font-family:ui-monospace,'Cascadia Code',Menlo,monospace;font-size:.88em;background:#12141e;border:1px solid var(--border);border-radius:5px;padding:1px 6px}
+pre{background:#12141e;border:1px solid var(--border);border-radius:var(--radius);padding:16px;overflow-x:auto;margin-bottom:16px}
+pre code{background:none;border:none;padding:0;font-size:.85rem;line-height:1.6}
+table{width:100%;border-collapse:collapse;margin-bottom:18px;font-size:.92rem}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:.82rem;text-transform:uppercase;letter-spacing:.5px}
+.symptoms{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent2);border-radius:var(--radius);padding:20px 24px 8px;margin-bottom:8px}
+.note{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius);padding:14px 18px;margin-bottom:16px;font-size:.93rem;color:var(--muted)}
+.note strong{color:var(--text)}
+footer{text-align:center;padding:32px 20px;border-top:1px solid var(--border);color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+<header>
+  <h1>screamplay</h1>
+  <p>A command-line player that streams audio files to any Scream receiver over the network — no virtual sound card needed.</p>
+  <div class="btns">
+    <a class="primary" href="https://github.com/zirize/screamplay">Source on GitHub</a>
+    <a href="https://github.com/duncanthrax/scream">The Scream project</a>
+    <a href="https://zirize.github.io/pipewire-scream/">pipewire-scream (virtual sink)</a>
+  </div>
+</header>
+<main>
+<div class="note"><strong>AI-generated code.</strong> Developed with the assistance of an AI agent
+(Gemini CLI) with minimal human intervention. Review the code before production use.</div>
+
+<h2>What it does</h2>
+<ul>
+<li><strong>Multi-format.</strong> <code>libsndfile</code> decodes WAV, FLAC, OGG, AIFF and MP3 where
+    the local libsndfile supports it.</li>
+<li><strong>Intelligent resampling.</strong> <code>libsamplerate</code> converts non-standard rates
+    (24 kHz, say) to a receiver-friendly 48 kHz automatically.</li>
+<li><strong>High-precision pacing.</strong> <code>clock_nanosleep</code> emits packets at exactly the
+    required bitrate, so the stream does not drift.</li>
+</ul>
+
+<h2>Build</h2>
+<pre><code># Debian/Ubuntu
+sudo apt install build-essential pkg-config libsndfile1-dev libsamplerate0-dev
+# Fedora/RHEL
+sudo dnf install gcc make pkgconf-pkg-config libsndfile-devel libsamplerate-devel
+# Arch
+sudo pacman -S base-devel pkgconf libsndfile libsamplerate
+
+git clone https://github.com/zirize/screamplay.git
+cd screamplay
+make
+sudo install -m755 screamplay /usr/local/bin/   # optional</code></pre>
+
+<h2>Usage</h2>
+<pre><code>./screamplay [options] &lt;audio_file&gt;</code></pre>
+<table>
+<tr><th>Flag</th><th>Long form</th><th>Description</th></tr>
+<tr><td><code>-H &lt;host&gt;</code></td><td><code>--host</code></td><td>Target receiver IP (default <code>239.255.77.77</code>)</td></tr>
+<tr><td><code>-P &lt;port&gt;</code></td><td><code>--port</code></td><td>Target UDP port (default <code>4010</code>)</td></tr>
+<tr><td><code>-v</code></td><td><code>--verbose</code></td><td>Print file info and resampling details</td></tr>
+<tr><td><code>-h</code></td><td><code>--help</code></td><td>Show help and exit</td></tr>
+</table>
+<pre><code># default Scream multicast broadcast
+./screamplay music.flac
+
+# a specific receiver
+./screamplay -H 192.168.1.100 -P 4010 music.flac
+
+# see what it decided about rate, channels and resampling
+./screamplay -v music.ogg</code></pre>
+
+<h2>Receivers</h2>
+<p>Any standard Scream receiver: the Unix receiver from the main Scream repository
+(<code>./scream -o alsa</code> or <code>-o pulse</code>) on Linux, ScreamReader on Windows.
+<code>scripts/setup_scream_receiver.sh</code> downloads and builds the Unix receiver into
+<code>vendor/</code> for local testing.</p>
+<table>
+<tr><th>Script</th><th>Description</th></tr>
+<tr><td><code>install_libsndfile.sh</code></td><td>Installs libsndfile on Debian/Ubuntu or Arch</td></tr>
+<tr><td><code>install_samplerate.sh</code></td><td>Installs libsamplerate on Debian/Ubuntu or Arch</td></tr>
+<tr><td><code>setup_scream_receiver.sh</code></td><td>Builds the official Scream Unix receiver locally</td></tr>
+<tr><td><code>debug_capture.sh</code></td><td>Runs a receiver in raw mode and dumps PCM for analysis</td></tr>
+</table>
+
+<h2>Testing</h2>
+<pre><code>pip install pytest
+pytest tests/ -v</code></pre>
+<p>The suite generates a dummy WAV, starts a mock UDP receiver, runs <code>screamplay</code>, and
+validates that the Scream protocol header — sample rate, bit depth, channels — is formed correctly.</p>
+
+<h2>Troubleshooting</h2>
+<ul>
+<li><strong>No audio at the receiver</strong> — confirm the IP and port, open the firewall
+    (<code>sudo ufw allow 4010/udp</code>), check the route.</li>
+<li><strong><code>pkg-config</code> error during <code>make</code></strong> — the <code>-dev</code>
+    packages for libsndfile and libsamplerate are missing.</li>
+<li><strong>Unsupported sample rate</strong> — it resamples to 48 kHz automatically; use
+    <code>-v</code> to confirm.</li>
+</ul>
+
+<h2>Licence</h2>
+<p>GNU Lesser General Public License v2.1.</p>
+</main>
+<footer>
+  <p><a href="https://zirize.github.io/">zirize</a> · <a href="https://github.com/zirize/screamplay">GitHub</a></p>
+</footer>
+</body>
+</html>
