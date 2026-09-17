@@ -1,5 +1,7 @@
 # screamplay
 
+📄 Project page: **[screamplay — play audio files over the network with the Scream protocol](https://zirize.github.io/screamplay/)** · More projects: **[zirize.github.io](https://zirize.github.io/)**
+
 A command-line utility for playing back audio files over a network using the [Scream](https://github.com/duncanthrax/scream) virtual network sound card protocol.
 
 > **Notice:** This project was developed with the assistance of an AI agent (Gemini CLI) with minimal human intervention. Please review the code before production use.
